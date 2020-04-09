@@ -1,0 +1,31 @@
+{% extends "layouts/" + render_mode + ".html" %}
+
+{%- block contenttools %}
+  {%- set activities = [{
+    'name': 'settings',
+    'icon': 'settings',
+    'url': U('/settings/'),
+    'text': _("Settings"),
+    'description': _("Settings and Technical Tools")
+  },{
+    'name': 'notifications',
+    'icon': 'notifications',
+    'url': U('/logs/events/'),
+    'text': _("Event Log"),
+    'description': _("Mailpile Event Log")
+  },{
+    'name': 'netlog',
+    'icon': 'force-graph',
+    'url': U('/logs/network/'),
+    'text': _("Network"),
+    'description': _("Recent Network Activity")
+  }] %}
+  {%- set selection_initial_prompt = _("Settings, logs, events, troubleshooting, ...") %}
+  {%- include("partials/tools_default.html") %}
+{%- endblock %}
+
+{% block content %}
+<div class="content-normal settings-page">
+  {%- block logs_content %}{% endblock %}
+</div>
+{% endblock %}

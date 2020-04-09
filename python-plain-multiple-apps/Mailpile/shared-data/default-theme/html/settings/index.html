@@ -1,0 +1,168 @@
+{% if ui_from_profiles %}
+{% extends "layouts/" + render_mode + "-tall.html" %}
+{% else %}
+{% extends "logs/layout.html" %}
+{% endif %}
+
+{% block title %}{{_("Settings & Tools")}}{% endblock %}
+
+{% block content %}
+{%- set plugin_settings = get_ui_elements('settings', state) %}
+<div class="content-normal settings-page">
+
+  <h1 class="page-title-data mobile-hide">
+    <span class="page-title-icon"><span class="icon icon-settings"></span></span>
+    <span class="page-title-text">{{_("Settings & Tools")}}</span>
+  </h1>
+
+  {% set motd = mailpile('motd', '--noupdate').result %}
+  
+  <p class="version-info mobile-hide" style="margin-left: 2em;">
+    {{_("This is Mailpile version %(version)s",
+        version=config.version)}}{% if motd._version_info %}:
+    <i>{{ motd._version_info }}</i>{% endif %}.
+  </p>
+
+  <a name="settings"></a><div class="setting-group" style="width: 33em; float: left;">
+    <h3 class="mobile-hide">{{_("Settings")}}</h3>
+    <div style="margin-left: 1em; display: inline-block;">
+      <p>
+        <a href="{{ U('/profiles/') }}">
+          <button class="button-secondary" style="width: 175px; text-align: left;">
+            <span class="icon icon-home"></span> {{_("Accounts")}}
+          </button>
+        </a> &nbsp;
+        {{_("Your Accounts")}}
+      </p>
+      <p>
+        <a href="{{ U('/settings/preferences.html') }}">
+          <button class="button-secondary" style="width: 175px; text-align: left;">
+            <span class="icon icon-animals"></span> {{_("Preferences")}}
+          </button>
+        </a> &nbsp;
+        {{_("Your Preferences")}}
+      </p>
+      <p>
+        <a href="{{ U('/settings/plugins.html') }}">
+          <button class="button-secondary" style="width: 175px; text-align: left;">
+            <span class="icon icon-lightbulb"></span> {{_("Plugins")}}
+          </button>
+        </a> &nbsp;
+        {{_("Plugins and Addons")}}
+      </p>
+{%- for elem in plugin_settings %}
+      <p>
+        <a href="{{ U(elem.url) }}" title="{{ elem.description }}">
+          <button style="width: 175px; text-align: left;">
+            <span class="icon icon-{{ elem.icon }}"></span> {{elem.text}}
+          </button>
+        </a> &nbsp;
+        {{elem.text}}
+      </p>
+{%- endfor %}
+      <p>
+        <a href="{{ U('/settings/privacy.html') }}">
+          <button style="width: 175px; text-align: left;">
+            <span class="icon icon-privacy"></span> {{_("Privacy")}}
+          </button>
+        </a> &nbsp;
+        {{_("Security and Privacy Settings")}}
+      </p>
+      <p>
+        <a href="{{ U('/setup/password/') }}">
+          <button class="button-warning" style="width: 175px; text-align: left;">
+            <span class="icon icon-lock-closed"></span> {{_("Password")}}
+          </button>
+        </a> &nbsp;
+        {{_("Change Your Mailpile Password")}}
+      </p>
+
+    </div>
+  </div>
+
+  <a name="tools"></a><div class="setting-group" style="width: 33em; float: left;">
+    <h3>{{_("Tools")}}</h3>
+    <div style="margin-left: 1em; display: inline-block;">
+      <p>
+        <a href="{{ U('/logs/events/') }}">
+          <button class="button-secondary" style="width: 175px; text-align: left;">
+            <span class="icon icon-notifications"></span> {{_("Event Log")}}
+          </button>
+        </a> &nbsp;
+        {{_("Mailpile Event Log")}}
+      </p>
+      <p>
+        <a href="{{ U('/logs/network/') }}">
+          <button class="button-secondary" style="width: 175px; text-align: left;">
+            <span class="icon icon-force-graph"></span> {{_("Network")}}
+          </button>
+        </a> &nbsp;
+        {{_("Recent Network Activity")}}
+      </p>
+      <p>
+        <a href="{{ U('/backup/download/?csrf=') }}{{ csrf_token }}">
+          <button class="button-secondary" style="width: 175px; text-align: left;">
+            <span class="icon icon-help"></span> {{_("Backup")}}
+          </button>
+        </a> &nbsp;
+        {{_("Backup Your Settings and Keys")}}
+      </p>
+      <p>
+        <a class="auto-modal auto-modal-sticky" href="{{ U('/crypto/tls/getcert/') }}">
+          <button style="width: 175px; text-align: left;">
+            <span class="icon icon-links"></span> {{_("TLS Certs")}}
+          </button>
+        </a> &nbsp;
+        {{_("TLS Certificate Tool")}}
+      </p>
+      <p>
+        <a class="auto-modal auto-modal-sticky" href="{{ U('/settings/set/password/') }}">
+          <button style="width: 175px; text-align: left;">
+            <span class="icon icon-user"></span> {{_("Passwords")}}
+          </button>
+        </a> &nbsp;
+        {{_("Account Password Management")}}
+      </p>
+      <p>
+        <a class="auto-modal auto-modal-sticky" href="{{ U('/settings/set/password/keys.html') }}">
+          <button style="width: 175px; text-align: left;">
+            <span class="icon icon-key"></span> {{_("Keys")}}
+          </button>
+        </a> &nbsp;
+        {{_("Encryption Key Management")}}
+      </p>
+      <p>
+        <a href="#" onclick="Mailpile.Terminal.toggle('small');">
+          <button class="button-warning" style="width: 175px; text-align: left;">
+            <span class="icon icon-code"></span> {{_("CLI")}}
+          </button>
+        </a> &nbsp;
+        {{_("Command Line Interface")}}
+      </p>
+      <p>
+        <a href="#" class="shutdown-mailpile">
+          <button class="button-warning" style="width: 175px; text-align: left;">
+            <span class="icon icon-logout"></span> {{_("Shutdown")}}
+          </button>
+        </a> &nbsp;
+        {{_("Shutdown Mailpile")}}
+      </p>
+    </div>
+  </div>
+  <br clear="both">
+
+</div>
+<script language="javascript">
+
+  $('a.shutdown-mailpile').click(function(ev) {
+    if (confirm(
+        "{{_('Are you sure you want to shutdown Mailpile?')|escapejs}}")) {
+      Mailpile.API.quitquitquit_post({}, function() {
+        Mailpile.API._notify_dead(
+          'user', "{{_('Shutting down ...')|escapejs}}", true);
+      });
+    };
+  });
+
+</script>
+{% endblock %}

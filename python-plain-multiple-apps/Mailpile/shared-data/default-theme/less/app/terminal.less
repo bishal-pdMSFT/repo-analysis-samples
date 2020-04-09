@@ -1,0 +1,121 @@
+
+/* Terminal */
+
+#terminal_blanket {
+    position: fixed;
+    z-index: 500;
+    width: 100%;
+    height: 100%;
+    display: none;
+    background: none;
+    opacity: 0.0;
+}
+
+#terminal {
+    position: fixed;
+    z-index: 501;
+    display: none;
+    background: #000;
+    font-family: monospace;
+    font-size: 14px;
+    color: #eee;
+    width: 100%;
+
+    div.log,
+    div.output {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        position: relative;
+        bottom: 0px;
+        vertical-align: bottom;
+        background: none;
+        padding: 0px;
+        margin: 0px;
+        padding-bottom: 10px;
+        color: #eee;
+        border: 0px;
+    }
+    div.html_blob {
+        position: relative;
+        white-space: normal;
+        background: #ddd;
+        padding: 0;
+        margin: 5px 50px 15px 50px;
+        border: 2px solid #fff;
+    }
+    div.html_blob #content-view {
+        position: inherit;
+        color: #111;
+    }
+    div.html_blob #pile-speed {
+        display: none;
+    }
+
+    #console {
+        position: absolute;
+        top: 0px;
+        bottom: 0px;
+        left: 0px;
+        width: 100%;
+
+        #terminal_output {
+            display: block;
+            position: absolute;
+            top: 0px;
+            bottom: 25px;
+            left: 0px;
+            right: 0px;
+            padding: 6px;
+            overflow-y: scroll;
+            overflow-x: hidden;
+        }
+
+        #terminal_input {
+            height: 20px;
+            background: #000;
+            position: absolute;
+            border-top: 1px solid #ccc;
+            width: 100%;
+            padding: 3px;
+            padding-left: 6px;
+            padding-right: 6px;
+            bottom: 0px;
+
+            #terminal_halfsize_button {
+                display: none;
+            }
+
+            #terminal_fullsize_button {}
+
+            form {
+                display: inline-block;
+                width: 90%;
+            }
+
+            #prompt {
+                color: #8f9;
+            }
+
+            input {
+                outline: none;
+                display: inline-block;
+                width: 100%;
+                background: none;
+                border: none;
+                font-family: monospace;
+                color: #eee;
+                font-size: 15px;
+            }
+        }
+    }
+
+    div.log {
+        line-height: 16px;
+        color: #77e;
+        padding: 0 0 2px 0;
+        margin: 0;
+    }
+    div.log .ts {
+        color: #55c;
+    }
+}

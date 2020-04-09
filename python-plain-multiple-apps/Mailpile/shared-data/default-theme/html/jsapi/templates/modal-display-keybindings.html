@@ -1,0 +1,32 @@
+<div class="modal-dialog">
+  <div class="modal-content">
+    <div class="modal-header">
+      <button type="button" class="close button-info" data-dismiss="modal" aria-hidden="true">&times;</button>
+      <h4 class="modal-title">{{ _("Keyboard Shortcuts") }}</h4>
+    </div>
+    <div class="modal-body modal-body-light-gray">
+      <table class="default-table">
+        <thead>
+          <th>{{ _("Keys") }}</th>
+          <th>{{ _("Action") }}</th>
+        </thead>
+        <tbody>
+          <% _.each(keybindings, function(binding) { if (binding.title) { %>
+            <tr>
+              <td>
+                  <% _.each(binding.keys.split(' '), function(keystroke) { %>
+                    <% var keys = keystroke.split('+') %>
+                    <% _.forEach(keys, function(key, idx) { %>
+                      <kbd><%= key %></kbd>
+                      <%= (idx < (keys.length - 1)) ? '+' : '' %>
+                    <% }); %>
+                  <% }); %>
+              </td>
+              <td><%= binding.title %></td>
+            </tr>
+          <% } }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

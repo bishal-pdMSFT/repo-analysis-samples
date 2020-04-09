@@ -1,0 +1,20 @@
+PATH:=$(PATH):/Applications/CodeKit.app/Contents/Resources/engines/less/bin/
+
+all: shared-data/default-theme/css/default.css \
+     shared-data/default-theme/css/print.css
+	@true
+
+shared-data/default-theme/css/default.css: .less-deps
+	@(cd shared-data/default-theme/less && \
+            lessc default.less \
+              |perl -npe 's,(libraries|app)/,,g' \
+              |perl -npe 's,/shared-data/,../,g' \
+              |perl -npe 's,[\./]+/bower_components/select2/,../css/,g' \
+	    >../css/default.css)
+	@ls -l shared-data/default-theme/css/default.css
+
+shared-data/default-theme/css/print.css: .less-deps
+	@(cd shared-data/default-theme/less && lessc -x print.less >../css/print.css)
+	@ls -l shared-data/default-theme/css/print.css
+
+.less-deps: scripts/less-compiler.in \

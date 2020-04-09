@@ -1,0 +1,8 @@
+{% extends "layouts/" + render_mode + ".html" %}
+{% block content %}
+{% if result and not result.errors %}
+  {% include("search/index.html") %}
+{% else %}
+  {% include("partials/error_message_missing.html") %}
+{% endif  %}{# if result #}
+{% endblock %}

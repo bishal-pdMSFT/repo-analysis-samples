@@ -1,0 +1,225 @@
+{%- extends "layouts/" + render_mode + ".html" %}
+{%- block head %}
+  <style type='text/css'>
+    .unconfigured.icon {color: #aaa;}
+    .configured.icon {color: #070;}
+    .misconfigured.icon {color: #700;}
+  </style>
+{%- endblock %}
+{%- block title %}{{_("Welcome Home")}}{% endblock %}
+
+{%- block contenttools %}
+  {%- if is_configured() %}
+    {%- set activities = [{
+      'name': 'browser',
+      'icon': 'list',
+      'url': U('/browse/'),
+      'text': _("Browse"),
+      'description': _("Browse Files and Mailboxes")
+    },{
+      'name': 'addprofile',
+      'icon': 'plus',
+      'aclass': 'auto-modal',
+      'url': U('/profiles/add/'),
+      'text': _("Add Account"),
+      'description': _("Create a new Account")
+    }] %}
+    {%- set selection_initial_prompt = _("Configure your accounts, profiles and other settings") %}
+    {%- include("partials/tools_default.html") %}
+  {% else %}
+    {%- set activities = [{
+      'name': 'settings',
+      'icon': 'settings',
+      'url': U('/settings/privacy.html?ui_from_profiles=True'),
+      'text': _("Privacy"),
+      'description': _("Security and Privacy Settings")
+    }] %}
+    {%- set selection_initial_prompt = _("You can configure accounts and profiles once you have reviewed your privacy settings.") %}
+    {%- include("partials/tools_default.html") %}
+  {% endif %}
+{%- endblock %}
+
+{%- block content %}
+<div id="page" class="content-normal">
+
+  <h1 class="page-title-data mobile-hide">
+    <span class="icon icon-home"></span>
+    {{_("Welcome Home")}}
+  </h1>
+
+{%- if result.profiles|length > 0 %}
+  <section class="account-list">
+      <h3>{{_("E-mail Accounts")}}</h3>
+      <table>
+        <tr>
+          <th colspan="2"></th>
+          <th>{{_("Your name")}}</th>
+          <th>{{_("E-mail address")}}</th>
+          <th style="text-align: right; padding-left: 1.5em;"><span class="icon icon-new"></span> {{_("New")}}</th>
+          <th style="text-align: right"><span class="icon icon-logo"></span> {{_("Total")}}</th>
+          <th style="text-align: right; padding-left: 1.5em;"><span class="icon icon-settings"></span> {{_("Settings")}}</th>
+          <th></th>
+        </tr>
+        {%- if result.loading or not result.loaded %}
+        <tr class="message">
+            <td colspan="9">
+                <div class="text-center">
+                    <p style="margin: 1em; padding: 0;">
+                        <i>{{_("Still loading profiles and contacts, please wait...")}}</i>
+                    </p>
+                    <script type="text/javascript">
+                    setTimeout('window.location.href=window.location.href', 5000);
+                    </script>
+                </div>
+            </td>
+        </tr>
+        {%- elif result.rids %}
+        {%- for profile_rid in result.rids %}
+         {%- set p = result.profiles[result.rids[profile_rid]] %}
+         {%- if 'x-mailpile-profile-tag' in p and p['x-mailpile-profile-tag'] in config.tags %}
+           {%- set t = mailpile('tags', config.tags[p['x-mailpile-profile-tag']].slug).result.tags.0 %}
+         {%- else %}
+           {%- set t = {'slug': 'all-mail', 'stats': {'new': '', 'all': ''}} %}
+         {%- endif %}
+         {%- if 'x-mailpile-profile-route' in p %}
+          {%- set route = config.routes[p['x-mailpile-profile-route']] %}
+         {%- else %}
+          {%- set route = '' %}
+         {%- endif %}
+        <tr valign="top" class="message">
+          <td id="compose-message">
+            {%- if route %}
+            <a class="button-compose" title="Compose as {{ p.email.0.email }}"
+                href="/message/compose/?from={{ p.email.0.email }}">
+              <span class="icon icon-compose"></span>
+            </a>
+            {%- endif %}
+          </td>
+          <td id="photo" style="padding: 0; margin: 0;">
+            {%- if p.photo %}
+            <img width="20" height="20" style="margin: 0 5px -4px 5px;"
+                 src="data:{{ p.photo.0.photo }}">
+            {%- endif %}
+          </td>
+          <td id="first-name">
+            <a href="{{ U('/in/inbox/?q=in:', t.slug) }}">
+              {{ p.fn }}
+            </a>
+          </td>
+          <td id="email-address">{% for e in p.email %}
+            {{ e.email }}{% if not loop.last %}<br>{% endif %}
+          {%- endfor %}</td>
+          <td id="stats-new">
+            <span class="mobile-inline icon icon-new"></span>
+            <a href="{{ U('/in/', t.slug, '/?q=is:unread') }}"><b>{{ friendly_number(t.stats.new) }}</b></a>
+          </td>
+          <td id="stats-all">
+            <span class="mobile-inline icon icon-logo"></span>
+            <a href="{{ U('/in/', t.slug, '/') }}">{{ friendly_number(t.stats.all) }}</a>
+           </td>
+           <td id="settings-actions">
+             {%- if not (p['x-mailpile-profile-source'] or []) %}
+             <a class="auto-modal" data-flags="reload" data-icon="icon-mailsource"
+                title="{{_('Configure Incoming Mail')}}"
+                href="{{ U('/profiles/edit/?rid=', profile_rid, '&ui_open=sources') }}">
+               <span class="unconfigured icon icon-mailsource"></span>
+             </a>
+             {%- endif %}
+             {%- for ms in (p['x-mailpile-profile-source'] or []) %}
+               {%- set source_id = ms['profile-source'] %}
+               {%- set source = config.sources[source_id] %}
+             <a class="source-{{source_id}} auto-modal" data-flags="reload" data-icon="icon-mailsource"
+                data-title="{{_('Incoming Mail:')}} {{source.name}}"
+                title="{{_('Incoming Mail:')}} {{source.name}}"
+                href="{{ U('/profiles/edit/?rid=', profile_rid, '&ui_open=sources') }}">
+               <span class="configured icon icon-mailsource"></span>
+             </a>
+             {%- endfor %}
+             <a class="auto-modal" data-flags="reload" data-icon="icon-outbox"
+                title="{{_('Outgoing Mail Settings')}}"
+                href="{{ U('/profiles/edit/?rid=', profile_rid, '&ui_open=route') }}">
+               <span class="{% if not route %}un{% endif %}configured icon icon-outbox"></span>
+             </a>
+
+             <a class="auto-modal" data-flags="reload" data-icon="icon-lock-closed"
+                title="{{_("Security Settings")}}"
+                href="{{ U('/profiles/edit/?rid=', profile_rid, '&ui_open=security') }}">
+               <span class="profile-{{profile_rid}}-key
+                            {% if p.key %}configured icon icon-lock-closed
+                            {% else %}unconfigured icon icon-lock-open{% endif %}"></span>
+             </a>
+
+             <a class="auto-modal" data-flags="reload" data-icon="icon-user"
+                title="{{_("Edit Profile")}}"
+                        href="{{ U('/profiles/edit/?rid=', profile_rid) }}">
+                       <span class="icon icon-user" style="color: #070;"></span>
+             </a>
+           </td>
+           <td id="delete-account">
+             <a class="auto-modal" data-flags="reload" data-icon="icon-trash"
+                title="{{_("Remove Account")}}"
+                href="{{ U('/profiles/remove/?rid=', profile_rid) }}">
+               <span class="icon icon-trash" style="color: #750;"></span>
+             </a>
+           </td>
+        </tr>
+        {%- endfor %}
+      {% endif %}
+      </table>
+    </section>
+      {% elif not is_configured() %}
+      <section class="message text-center">
+        <br>
+        <p><i>{{_("Please review your privacy settings before adding any accounts.")}}</i></p>
+        <p><a title="{{_("Security and Privacy Settings")}}"
+              href="{{ U('/settings/privacy.html?ui_from_profiles=True') }}"><button type=button class="button-secondary">
+          <span class="icon icon-settings"></span> {{_("Privacy & Security")}}
+        </button></a></p>
+    </section>
+      {%- elif result.profiles|length < 1 %}{# > #}
+      <section class="message text-center">
+        <br>
+        <p><i>{{_("You have not configured any accounts yet.")}}</i></p>
+        <p><a class="auto-modal" data-flags="reload" data-icon="icon-user"
+              title="{{_("Create a new Account")}}"
+              href="{{ U('/profiles/add/') }}"><button type=button class="button-primary">
+          <span class="icon icon-plus"></span> {{_("Add Account")}}
+        </button></a></p>
+    </section>
+      {%- endif %}
+
+  {% set motd = mailpile('motd', '--noupdate').result %}
+  {% if motd._motd %}
+  <section class="motd {%- if motd.timestamp > config.timestamp %} recent{% endif %}">
+    <h3>
+      {{_("Message Of The Day, %(date)s", date=motd.timestamp|friendly_datetime)}}
+    </h3>
+    <p class="motd">
+      {{ motd._motd|to_br }}
+    {% if motd.source %}
+      <a class="motd-signed" target=_blank href="{{ motd.source }}">
+        - {{ motd.signed }}
+      </a>
+    {% endif %}
+    </p>
+    <p class="version-info">
+      {{_("This is Mailpile version %(version)s", version=config.version)}}:
+      <i {% if config.version|string() != motd.latest_version|string() -%}
+         class="updated"{% endif %}>{{ motd._version_info }}</i>.
+    </p>
+  </section>
+  {% endif %}
+
+</div>
+<div class="clearfix"></div>
+{% if config.web.release_notes %}
+<script type='text/javascript'>
+  $(document).ready(function() {
+    $('.bulk-action-relnotes').click();
+  });
+</script>
+{% endif %}
+<script type='text/javascript'>
+  Mailpile.API.logs_events_get({incomplete: true}, EventLog.invoke_callbacks);
+</script>
+{%- endblock %}

@@ -1,0 +1,295 @@
+<div id="tags-settings" class="content-normal" style="position: relative; max-width: 42em;">
+{% set theme_colors = theme_settings().colors %}
+<form class="standard" method="POST"
+{%- if state.command_url == "/tags/add/" %}
+      action="{{ U('/tags/add/') }}"
+{%- else %}
+      action="{{ U('/settings/set/') }}"
+{%- endif %}>
+  {{- csrf_field|safe }}
+
+  <div class="clearfix half-bottom">
+    <h1 class="contact-name half-bottom">
+      <span id="tag-editor-icon" class="{{tag.icon}}"
+            style="color: {{ theme_colors.get(tag.label_color, tag.label_color) }}"></span>
+      {{form_title}}
+    </h1>
+  </div>
+
+  {# Note: See jsapi/search/events.js for Javascript relating to this form;
+   #       it is largely shared with the "Save Search" modal.
+   #}
+  <script type="text/javascript">
+  </script>
+
+  <p class="message paragraph-important modal-basic-settings-title">
+    <span class="icon-settings"></span> {{_("Tag Settings")}}</h4>
+  </p>
+  <div class="modal-basic-settings">
+
+    <div class="left">
+      <div class="right">
+        <a class="{{ tag.icon }} modal-open-choose-tag-icon"
+           title='{{_("Change Icon")}}'
+           style="color: {{ theme_colors.get(tag.label_color, tag.label_color) }}"></a>
+        <input type="hidden" class='choose-tag-icon'
+               name="{{prefix}}icon" value="{{ tag.icon }}">
+        <a class="modal-open-choose-tag-color"
+           style="color: {{ theme_colors.get(tag.label_color, tag.label_color) }}"
+           title='{{_("Change Color")}}'>{{_("Color")}}</a>
+        <input type="hidden" class='choose-tag-color'
+               name="{{prefix}}label_color" value="{{tag.label_color}}">
+      </div>
+      <label>{{_("Tag")}}</label>
+      <input type="text" name="{{prefix}}name"
+             value="{{tag.name}}" placeholder="{{_("Tag Name")}}">
+    </div>
+    <div class="right">
+      <ul>
+        <li><input type="radio" name="{{prefix}}display" value="priority" {% if tag.display == 'priority' %}checked{% endif %}>
+            <span class="checkbox">{{_("Show in top of sidebar")}}</span></li>
+        <li><input type="radio" name="{{prefix}}display" value="tag" {% if tag.display == 'tag' %}checked{% endif %}>
+            <span class="checkbox">{{_("Show in sidebar")}}</span></li>
+        <li><input type="radio" name="{{prefix}}display" {% if tag.display in ('archive', 'invisible') %}value="{{tag.display}}" checked{% else %}value="archive"{% endif %}>
+            <span class="checkbox">{{_("Hide from sidebar")}}</span></li>
+      </ul>
+      <ul>
+        <li><input type="radio" name="{{prefix}}label" value="true" {% if tag.label %}checked{% endif %}>
+            <span class="checkbox">{{_("Show in search results")}}</span></li>
+        <li><input type="radio" name="{{prefix}}label" value="false" {% if not tag.label %}checked{% endif %}>
+            <span class="checkbox">{{_("Hide from search results")}}</span></li>
+      </ul>
+    </div>
+    <br clear="both">
+
+  </div>
+
+  <div class="modal-tag-technical">
+    <p class="message paragraph-important tag-edit-title">
+      <span class="icon-work"></span> {{_("Technical Settings")}}</h4>
+    </p>
+    <div class="tag-edit-technical hide">
+      <div class="right">
+{%- if tag.type in ('tag', 'attribute') %}
+        <ul>
+          <li><input type="radio" name="{{prefix}}type" value="tag" {% if tag.type == "tag" %}checked{% endif %}>
+              <span class="checkbox">{{_("Behave as category")}}</span></li>
+          <li><input type="radio" name="{{prefix}}type" value="attribute" {% if tag.type == "attribute" %}checked{% endif %}>
+              <span class="checkbox">{{_("Behave as attribute")}}</span></li>
+        </ul>
+        <ul>
+          <li><input type="radio" name="{{prefix}}toolbar" value="true" {% if tag.toolbar %}checked{% endif %}>
+              <span class="checkbox">{{_("Display in toolbar")}}</span></li>
+          <li><input type="radio" name="{{prefix}}toolbar" value="false" {% if not tag.toolbar %}checked{% endif %}>
+              <span class="checkbox">{{_("Hide from toolbar")}}</span></li>
+        </ul>
+{%- endif %}
+      </div>
+{%- if tag.type in ('tag', 'attribute') %}
+{%-   if state.command_url != "/tags/add/" %}
+      <div>
+        <label>{{_("Keyword")}}</label>
+        <input type="text" name="{{prefix}}slug" value="{{tag.slug}}">
+      </div>
+{%-   endif %}
+{%- endif %}
+{%- if tag.subtags %}
+      <br clear="both"><label>{{_("Subtags")}}</label>
+      <ul class="items grouped">
+{%-   for sub in tag.subtags %}
+        <li class="grouped">
+          <a href="{{ sub.url }}">
+            <span class="{{sub.icon}}" style="color: {{ theme_colors.get(sub.label_color, sub.label_color) }}"></span>
+          {{sub.name}}
+          </a>
+          <a href="{{ U('/tags/edit.html?only=', sub.slug) }}"
+             title='Edit: {{ sub.name }}'
+             class="auto-modal auto-modal-reload right">
+            <span class="icon-settings"></span> {{_("Settings")}}
+          </a>
+        </li>
+{%-   endfor %}
+      </ul>
+{%- else %}
+      <label>{{_("Parent")}}</label>
+      <select name="{{prefix}}parent">
+          <option value="">-- {{_("None")}} --</option>
+{%-   for ptag in mailpile("tags", "mode=tree").result.tags %}
+{%-     if (ptag.display == "priority" or ptag.display == "tag")
+            and ptag.slug != tag.slug
+            and not ptag.parent %}
+          <option value="{{ptag.tid}}"{% if ptag.tid == tag.parent %} selected="selected"{% endif %}>{{ ptag.name }}</option>
+{%-     endif %}
+{%-   endfor %}
+      </select>
+{%- endif %}
+      <br clear="both">
+    </div>
+  </div>
+
+
+  <div class="modal-choose-tag-icon hide">
+    <p class="message paragraph-important">
+      <span class="icon-lightbulb"></span> {{_("Choose an Icon")}}</h4>
+    </p>
+    <ul class="horizontal tag-icons"></ul>
+    </ul>
+  </div>
+
+  <div class="modal-choose-tag-color hide">
+    <p class="message paragraph-important">
+      <span class="icon-themes"></span> {{_("Choose a Color")}}</h4>
+    </p>
+    <div class="text-center">
+      <ul class="horizontal tag-colors"></ul>
+    </div>
+  </div>
+
+{%- for src_id, source in config.sources.iteritems() %}
+  {%- for mbx_id, settings in source.mailbox.iteritems() %}
+    {%- if tag.tid and settings.primary_tag == tag.tid %}
+  <p class="message paragraph-important modal-mailbox-settings-title">
+    <span class="icon-mailsource"></span> {{_("Mailbox settings")}}:
+    {{ config.sys.mailbox[mbx_id] }}
+  </p>
+  <div class="modal-mailbox-settings">
+
+    <div class="right">
+      <ul>
+        <li><input type="radio"
+                   name="sources.{{src_id}}.mailbox.{{mbx_id}}.policy"
+                   {% if settings.policy not in ('ignore', 'inherit') -%}
+                   value="{{settings.policy}}" checked
+                   {% else %}value="read"{% endif %}>
+            <span class="checkbox">{{_("Add messages to search engine")}}</span></li>
+        <li><input type="radio" value="ignore"
+                   name="sources.{{src_id}}.mailbox.{{mbx_id}}.policy"
+                   {% if settings.policy == "ignore" %}checked{% endif %}>
+            <span class="checkbox">{{_("Stop adding messages to search engine")}}</span></li>
+        {%- if settings.policy == 'inherit' -%}
+        <li><input type="radio" value="inherit" checked
+                   name="sources.{{src_id}}.mailbox.{{mbx_id}}.policy">
+            <span class="checkbox">{{_("Use default mail source policy")}} ({{ _(source.discovery.policy) }})</span></li>
+        {%- endif %}
+        {% if settings.local == "" %}
+        <li><input type="checkbox" value="!CREATE"  checked
+                   name="sources.{{src_id}}.mailbox.{{mbx_id}}.local">
+            <span class="checkbox">{{_("Copy mail to Mailpile secure storage")}}</span></li>
+{#
+ # FIXME: Make it possible to disable the copying. This will require
+ #        shenanigans at the back-end, so we don't lose the old copies.
+ #}
+        {% endif %}
+      </ul>
+    </div>
+
+  </div>
+    {%- endif %}
+  {%- endfor %}
+{%- endfor %}
+
+
+{################ FIXME - THIS IS THE FUN STUFF!  #####################
+
+{%- if tag.type == 'mailbox' %}
+  <p class="message paragraph-important tag-edit-title">
+    <span class="icon-mailsource"></span> {{_("Mailbox Settings")}}</h4>
+  </p>
+  <div class="tag-edit-mailbox hide">
+  </div>
+{%- endif %}
+{%- if tag.type == 'tag' %}
+  <p class="message paragraph-important tag-edit-title">
+    <span class="icon-star"></span> {{_("Filters and Saved Searches")}}</h4>
+  </p>
+  <div class="tag-edit-filters hide">
+  </div>
+{%- endif %}
+######################################################################}
+
+{%- if tag.type in ('tag', 'attribute', 'inbox', 'spam', 'trash',
+                    'drafts', 'blank') %}
+  <div class="modal-tag-edit-automation">
+    <p class="message paragraph-important tag-edit-title">
+      <span class="icon-robot"></span> {{_("Automation")}}</h4>
+    </p>
+    <div class="tag-edit-automation hide">
+{%-  if tag.type in ('tag', 'attribute', 'spam') %}
+      <div class="left">
+        <label>{{_("Tagging")}}:</label>
+{%-   if tag.auto_tag in ('fancy', 'builtin') %}
+        <p style="padding: 1em; font-style: italic;">
+         {{ _("Auto-tagging is always enabled for this tag.") }}
+        </p>
+{%-   else %}
+        <ul>
+          <li title="
+  {{- _("Enable to tag messages automatically, like spam.") }}
+  {{  _("Tag or un-tag mail by hand to train the system.") }}">
+              <input type="radio" name="{{prefix}}auto_tag"
+                     value="true" {% if tag.auto_tag and tag.auto_tag != 'false' %}checked{% endif %}>
+              <span class="checkbox">{{_("Automatic tagging")}}</span>
+{# FIXME:     (<a href="">{{_("help")}}</a>) #}
+          </li>
+          <li title="{{ _("Disable automatic tagging.") }}">
+              <input type="radio" name="{{prefix}}auto_tag"
+                     value="false" {% if not tag.auto_tag or tag.auto_tag == 'false' %}checked{% endif %}>
+              <span class="checkbox">{{_("Tag by hand")}}</span>
+          </li>
+        </ul>
+{%-   endif %}
+      </div>
+{%-  endif %}
+  
+      <div class="right">
+        <label>{{_("Untagging")}}:</label>
+        <select name="{{prefix}}auto_after" style="margin-bottom: 5px;">
+          <option value="0" {% if not tag.auto_after %}selected{% endif %}>{{_("Never")}}</option>
+          <option value="1" {% if tag.auto_after == 1 %}selected{% endif %}>{{_("After 1 day")}}</option>
+          <option value="2" {% if tag.auto_after == 2 %}selected{% endif %}>{{_("After 2 days")}}</option>
+          <option value="3" {% if tag.auto_after == 3 %}selected{% endif %}>{{_("After 3 days")}}</option>
+          <option value="7" {% if tag.auto_after == 7 %}selected{% endif %}>{{_("After 1 week")}}</option>
+          <option value="14" {% if tag.auto_after == 14 %}selected{% endif %}>{{_("After 2 weeks")}}</option>
+          <option value="30" {% if tag.auto_after == 30 %}selected{% endif %}>{{_("After 1 month")}}</option>
+          <option value="91" {% if tag.auto_after == 91 %}selected{% endif %}>{{_("After 3 months")}}</option>
+{%-   if tag.auto_after not in (0, 1, 2, 3, 7, 14, 30, 91) %}
+          <option value="{{ tag.auto_after }}" selected>{{_("After %(days)s days", days=tag.auto_after) }}</option>
+{%-   endif %}
+        </select>
+        <select name="{{prefix}}auto_action" style="margin-top: 0;">
+          {% set to_inbox = "-" + tag.slug + " +inbox" %}
+          {% set to_trash = "-" + tag.slug + " +trash" %}
+          <option value="!untag" {% if tag.auto_action == "!untag" %}selected{% endif %}>{{ _("Remove from %(name)s", name=tag.name) }}</option>
+{%-   if 'inbox' not in (tag.slug, tag.type) %}
+          <option value="{{ to_inbox }}" {% if tag.auto_action == to_inbox %}selected{% endif %}>{{ _("Move to Inbox") }}</option>
+{%-   endif %}
+          <option value="{{ to_trash }}" {% if tag.auto_action == to_trash %}selected{% endif %}>{{ _("Move to Trash") }}</option>
+{%-   if config.prefs.allow_deletion or tag.auto_action == '!delete' %}
+          <option value="!delete" {% if tag.auto_action == "!delete" %}selected{% endif %}>{{ _("Delete e-mails") }}</option>
+{%-   endif %}
+{%-   if tag.auto_action not in ("", "!untag", "!delete", to_after, to_trash) %}
+          <option value="{{ tag.auto_action }}" selected>{{ tag.auto_action }}</option>
+{%-   endif %}
+        </select>
+      </div>
+    </div>
+  </div>
+{%- endif %}
+
+  <div>
+    <hr style="margin-bottom: 10px;">
+{%- if state.command_url == "/tags/add/" %}
+    <button class="button-primary right" type="submit"><span class="icon-plus"></span> {{_("Add")}}</button>
+{%- else %}
+    <button class="button-primary right" type="submit"><span class="icon-checked"></span> {{_("Save")}}</button>
+{%- endif %}
+{%- if state.command_url == "/tags/" and tag.type in ('tag', 'attribute') and not tag.subtags %}
+    <button class="button-warning" type="button" id="button-tag-delete"
+            data-slug="{{tag.slug}}" data-dismiss="modal" aria-hidden="true">
+      <span class="icon-minus"></span> {{_("Delete Tag")}}
+    </button>
+{%- endif %}
+  </div>
+
+</form>
+</div>

@@ -1,0 +1,515 @@
+/* Mobile only components to hide under normal circumstances */
+.mobile-block { display: none !important; }
+.mobile-inline { display: none !important; }
+.mobile-pt-block { display: none !important; }
+.mobile-pt-inline { display: none !important; }
+
+/* Mobile - All Sizes (devices and browser) */
+@media only screen and (max-width: 767px), (orientation: portrait) {
+  .mobile-block { display: block !important; }
+  .mobile-inline { display: inline-block !important; }
+  .mobile-hide { display: none !important; }
+
+  /* Start by making comfy/cozy/snug be identical: */
+  #pile-results.comfy, #pile-results.cozy, #pile-results.snug {
+      td { padding-top: 13px; padding-bottom: 11px; }
+      td.avatar { padding-top: 6px; padding-bottom: 5px; }
+      td.avatar a img { width: 24px; height: 24px; }
+      td.people span.conversation-count {
+          top: 1px;
+          padding: 4px 8px;
+      }
+  }
+
+  #content-view { top: 46px; }
+  .bulk-actions {
+    top: 0px;
+    position: absolute;
+    height: 46px;
+    width: 100%;
+    padding-top: 15px;
+  }
+
+  /* Make setup and login look less horrible */
+  div.setup-box-medium {
+      width: 100%;
+  }
+
+  div.setup-box {
+      border: 0px;
+      border-radius: 0px;
+      height: 100%;
+      width: 100%;
+      padding: 0px;
+      padding-top: 20px;
+      padding-bottom: 30px;
+  }
+
+  div.add-top {
+      margin-top: 0px !important;
+  }
+
+  div#identity-vault-lock {
+      display: block;
+      left: 0px;
+      margin-left:
+      auto;
+      margin-right: auto;
+  }
+
+  body {
+      background: @grayLight;
+  }
+
+  #login {
+      display: none;
+      #login-right, #login-left { display: none; }
+  }
+
+  #login-logo {
+      zoom: 0.8;
+      left: 0%;
+      width: 100%;
+      height: 100%;
+      display: block;
+      svg {
+          margin: auto;
+      }
+  }
+
+  #login-details {
+      left: 0px;
+      width: 100%;
+
+      .form-text {
+          display: block;
+          top: 0px;
+          left: 0px;
+          text-align: center;
+      }
+
+      .form-login {
+          display: block;
+          margin: auto;
+          margin-top: 5px;
+      }
+  }
+
+  #login-vault-lock {
+      display: none;
+  }
+
+  /* Now for serious business: */
+
+  .topbar {
+    min-width: 100%;
+  }
+  .topbar-logo {
+    min-width: 1%;
+    max-width: 1%;
+    width: 67px;
+    padding: 0;
+    margin: 0;
+  }
+  .topbar-logo #logo-icon,
+  .topbar-logo-name #logo-name { width: 75%; }
+  .topbar-logo-name { min-width: 30%; }
+  .topbar-actions { min-width: 80%; }
+
+  .topbar-logo span#page-title-icon { padding: 0 0 0 10px; }
+  .topbar-logo-name span#page-title-text {
+    position: absolute;
+    display: block;
+    top: 0;
+    font-size: 24px;
+    margin: 18px 10px;
+  }
+
+  .topbar-actions {
+    white-space: nowrap;
+    text-align: right;
+  }
+  .topbar-nav {
+    right: 8px;
+  }
+  .topbar-nav > ul > li { margin: 0 0 0 7px; padding: 0; }
+  @media (min-width: 350px) { .topbar-nav > ul > li { margin-left: 10px; } }
+  @media (min-width: 400px) { .topbar-nav > ul > li { margin-left: 11px; } }
+  @media (min-width: 450px) { .topbar-nav > ul > li { margin-left: 12px; } }
+  @media (min-width: 500px) { .topbar-nav > ul > li { margin-left: 13px; } }
+  @media (min-width: 550px) { .topbar-nav > ul > li { margin-left: 14px; } }
+  .topbar-nav > ul > li > a {
+    width: 22px;
+    height: 22px;
+    margin: 0;
+    padding: 0;
+  }
+  .topbar-nav > ul > li > a span.link-icon {
+    font-size: 22px;
+    line-height: 22px;
+    margin: 0;
+    padding: 8px 0 0 0;
+  }
+  .topbar-nav .nav-search { display: list-item; }
+
+  .form-search { width: auto; margin: 0 0 0 10px; }
+  .form-search input { width: auto; max-width: 100px; }
+  @media (min-width: 600px) { .form-search input { max-width: 150px; } }
+  @media (min-width: 700px) { .form-search input { max-width: 160px; } }
+
+  #sidebar, #sidebar-wrapper { width: 72px; }
+  #sidebar-scroll-area { bottom: 0; }
+  #sidebar a.sidebar-tag > span.name,
+  #sidebar a.sidebar-tag > span.notification { display: none; }
+  #sidebar-bottom { display: none; }
+  #sidebar-lists ul,
+  #sidebar a.sidebar-tag,
+  #sidebar-lists ul li:not(.hide) {
+    display: inline-block;
+    text-align: center; vertical-align: top;
+    padding: 0; margin: 0;
+  }
+  #sidebar-lists ul { display: block; }
+  #sidebar-lists li {
+    width: 72px;
+    height: 56px;
+    padding: 3px; margin: 0;
+    overflow: hidden;
+  }
+  #sidebar li.sidebar-subtag a.sidebar-tag span.name,
+  #sidebar li.sidebar-subtag a.sidebar-tag span.notification,
+  #sidebar a.sidebar-tag > span.name,
+  #sidebar.snug a.sidebar-tag > span.name,
+  #sidebar.cozy a.sidebar-tag > span.name {
+    display: block; font-size: 12px; line-height: 14px; width: 72px;
+    padding: 0; margin: 0;
+  }
+  #sidebar a.sidebar-tag > span.notification,
+  #sidebar.snug a.sidebar-tag > span.notification,
+  #sidebar.cozy a.sidebar-tag > span.notification {
+    display: block; width: 72px; text-align: center;
+    position: absolute; top: 20px;
+    color: @black;
+    text-shadow: 1px  1px 0px @white,
+                -1px -1px 0px @white,
+                -1px  1px 0px @white,
+                 1px -1px 0px @white;
+    opacity: 0.75;
+    font-size: 11px; font-weight: bold;
+  }
+  #sidebar li.sidebar-subtag a.sidebar-tag span.icon,
+  #sidebar.cozy a.sidebar-tag span.icon,
+  #sidebar.snug a.sidebar-tag span.icon,
+  #sidebar a.sidebar-tag span.icon {
+    display: block;
+    width: auto; height: 28px; font-size: 28px; line-height: 28px;
+    padding: 6px; margin: 0;
+  }
+  #sidebar a.sidebar-tag-expand { top: 25%; left: 0; }
+
+  #page {
+    margin: 0px !important;
+  }
+
+  #content { left: 72px; }
+
+  .content-normal, .pile-bottom {
+    h1 { font-size: 24px; padding: 4px; padding-left: 10px; }
+    h2 { font-size: 21px; padding: 4px; padding-left: 10px; }
+    h3 { font-size: 16px; padding: 4px; padding-left: 10px; }
+    h4 { font-size: 14px; padding: 4px; padding-left: 10px; }
+    h5 { font-size: 10px; padding: 4px; padding-left: 4px; }
+  }
+
+  div.content-normal { margin: 1px 5px; }
+
+  div.settings-page,
+  .settings-page .setting-group,
+  .settings-page .setting-group .settings { max-width: 100%; }
+  .settings-page .setting-group .explanation { display: none; }
+
+  #pile-results td.people { width: 110px; text-overflow: ellipsis; }
+  @media (min-width: 550px) { #pile-results td.people { width: 125px; } }
+  @media (min-width: 630px) { #pile-results td.people { width: 150px; } }
+
+  .content-normal section {
+      width: 100%;
+      max-width: 100%;
+      table {
+          width: 100%;
+          max-width: 100%;
+
+          th {
+              display: none;
+          }
+
+          tr {
+              display: block;
+              border-bottom: 1px solid @grayMid;
+          }
+
+          td {
+              display: inline-block;
+          }
+
+          td#email-address, td#first-name {
+              padding-top: 5px;
+              padding-bottom: 0px;
+              display: block;
+          }
+
+          td#first-name a {
+              font-size: 20px;
+          }
+
+          td#compose-message {
+              float: right;
+              padding-bottom: 0px;
+              a {
+                  font-size: 24px;
+              }
+          }
+
+          td#settings-actions, td#stats-new, td#stats-all {
+              a { padding-right: 8px; font-size: 16px; }
+          }
+      }
+  }
+  .content-normal section.motd {
+
+      padding: 0px;
+      .version-info {
+          padding-left: 5px;
+      }
+  }
+
+  #pile-bottom {
+    h5 { font-size: 12px; margin-top: 0px !important; }
+  }
+
+  #pile-empty {
+    .button-primary { display: block; }
+  }
+
+  #pile-results td.checkbox,
+  #pile-results div.crypto-and-tags { display: none; }
+  #pile-results td.rom,
+  #pile-results td.date { padding-right: 3px; }
+
+/*  #pile-results td.subject a.item-subject { width: 370px; }*/
+
+  #content-tools .sub-navigation > ul { margin: 9px; }
+  #content-tools nav li { padding: 0 1px; margin: 0; opacity: 0.95; }
+  #content-tools nav li,
+  #content-tools nav .navigation-icon { font-size: 18px; }
+  #content-tools nav .navigation-text { display: none; }
+
+  #bulk-actions-message { position: absolute; }
+
+}
+
+/* This is too small for the tabular result list, switch to card-style */
+@media only screen and (max-width: 480px) { // , (orientation: portrait) {
+  .mobile-pt-block { display: block !important; }
+  .mobile-pt-inline { display: inline-block !important; }
+  .mobile-pt-hide { display: none !important; }
+
+  #content {
+    left: 0;
+    bottom: 72px;
+  }
+  #sidebar {
+    position: fixed; display: block;
+    top: auto; left: 0; right: 0; bottom: 0;
+    padding: 0;
+    height: 73px; width: 100%; vertical-align: middle;
+    border-top: 1px solid @gray; border-right: 0;
+    z-index: 10;
+  }
+  #sidebar-wrapper {
+    width: 100%; height: 72px; margin: 0; padding: 0;
+  }
+  #sidebar-scroll-area {
+    overflow-x: scroll; overflow-y: hidden; padding: 0; margin: 0;
+  }
+  #sidebar-lists { width: 5000px; }
+  #sidebar-lists ul { display: inline-block; }
+  #sidebar-lists li {
+    width: 72px;
+    height: 64px;
+    padding: 3px 3px 0 3px;
+    margin-bottom: 0;
+  }
+
+  #notifications {
+    bottom: 0; left: 0px; right: 0px; top: auto;
+    width: 100%;
+    max-height: 73px; opacity: 0.95;
+  }
+  div.notification-bubble { padding: 2px 5px; }
+  div.notification-bubble br { display: inline; }
+  div.notification-bubble span.text { padding-left: 5px; }
+  @media (min-width: 470px), (orientation: landscape) {
+    div.notification-bubble br { display: none; }
+  }
+
+  .compose-from-select {
+      position: relative;
+      width: 15em;
+      max-width: 15em;
+      margin-bottom: 0.5em;
+      border-top: 1px solid @grayMid;;
+      padding-top: 4px;
+      margin-top: 0px;
+      margin-left: 0px;
+  }
+
+  /* Stuff we just hide... */
+  #sidebar hr,
+  #notifications-header,
+  #pile-speed{
+    display: none;
+  }
+
+  .bulk-actions ul { margin-right: 0px; white-space: nowrap; }
+  .bulk-actions li { padding: 0px 8px; }
+  @media (min-width: 340px) { .bulk-actions li { padding: 0px 9px; } }
+  @media (min-width: 360px) { .bulk-actions li { padding: 0px 10px; } }
+  @media (min-width: 380px) { .bulk-actions li { padding: 0px 11px; } }
+  @media (min-width: 400px) { .bulk-actions li { padding: 0px 12px; } }
+
+  .topbar-logo-name { min-width: 55%; }
+  .topbar-actions { min-width: 45%; }
+  .topbar-nav > ul > li > a span.link-icon { padding: 0 2px; }
+  .topbar-nav > ul > li.nav-search-hide {
+     position: absolute;
+     top: 9px;
+     right: 0px;
+  }
+
+  .form-search input { max-width: 115px; }
+  @media (min-width: 360px) { .form-search input { max-width: 130px; } }
+  @media (min-width: 380px) { .form-search input { max-width: 140px; } }
+  @media (min-width: 400px) { .form-search input { max-width: 150px; } }
+
+  #pile-results, #pile-results.comfy {
+    display: block;
+    tbody { display: block; }
+    tbody tr.pile-message {
+      display: block;
+      position: relative;
+      border-bottom: 1px solid @grayMid;
+      overflow: hidden;
+    }
+    td { display: block; border: none; }
+    td.avatar {
+      position: absolute;
+      top: 0px;
+      left: 0px;
+      width: 50px;
+      height: 50px;
+      a img {
+        margin: 5px 5px 5px 0px;
+        width: 40px; height: 40px; }
+    }
+    div.crypto-and-tags { display: none; }
+    td.checkbox { position: absolute; bottom: -3px; right: -5px; }
+    td.date { position: absolute; top: 0px; right: 5px; }
+    td.people {
+        position: absolute;
+        top: 0px;
+        left: 54px;
+        display: inline-block;
+        padding-right: 3px;
+        width: auto;
+        max-width: 55%;
+    }
+    td.subject { left: 54px; overflow: hidden; text-overflow: ellipsis; }
+    td.full-message { width: 100%; max-width: 100%; }
+    td.full-message .pile-message-content { margin: 2px; }
+    td.draggable { display: block; visibility: hidden;}
+    td.message-nav { position: absolute; display: block; width: 15px; top: 0px; left: 1px; }
+
+    tr.full-message {
+        /* When a full message is expanded in the results */
+        background-color: inherit;
+
+        .thread-container, .thread-message {
+            width: auto;
+        }
+
+        .form-compose {
+            padding: 0;
+            padding-left: 20px;
+        }
+
+        h3 {
+            font-size: 13px;
+        }
+        .message-subject {
+            font-size: 20px;
+            margin: 5px;
+            margin-left: 20px;
+            width: auto;
+            text-overflow: ellipsis;
+        }
+
+        td.people {
+            left: 25px;
+            display: block;
+            position: relative;
+            padding: 0px;
+            top: -20px;
+            width: 100%;
+        }
+        td.subject {
+            left: 0px;
+            display: block;
+            position: relative;
+            padding: 0px;
+            top: -20px;
+        }
+    }
+  }
+  .pile-results-drag .drag-info { display: none; }
+
+  div.footer-nav {
+    display: none;
+  }
+
+  #pile-more {
+      display: none;
+  }
+
+  #pile-bottom .button-primary {
+     width: 49.3%;
+     float: none;
+     text-align: center;
+     margin-left: auto;
+     margin-right: auto;
+  }
+
+  /* Single  footer button case */
+  #pile-previous.button-primary:last-of-type,
+  #pile-next.button-primary:nth-of-type(2) {
+    width: 100%;
+  }
+
+  table.account-list {
+      margin: 0 0 !important;
+      display: block;
+  }
+
+  div.motd {
+      background: @white;
+  }
+
+  .account-list {
+      display: block;
+      tr, td, th, tbody, thead {
+          display: block;
+          border: none;
+      }
+  }
+
+}

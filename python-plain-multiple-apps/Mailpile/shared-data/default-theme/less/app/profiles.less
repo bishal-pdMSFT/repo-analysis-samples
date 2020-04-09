@@ -1,0 +1,108 @@
+/* Mailpile - Settings */
+
+.content-normal .actions {
+    float: right;
+}
+
+.content-normal section {
+    h3 {
+        margin-top: 0.7em;
+        margin-bottom: 0.7em;
+        padding-left: 4px;
+    }
+
+    margin-left: -3px;
+    margin-right: -3px;
+
+    display: inline-block;
+    margin-top: 1.7em;
+
+    @media only screen and (min-width: 1600px), (orientation: portrait) {
+        max-width: 50%;
+        width: 100%;
+    }
+    vertical-align: top;
+}
+
+section.account-list {
+    margin-right: 5px;
+}
+
+section.account-list table {
+    margin: auto;
+    background: none;
+    border: 0;
+    text-align: right;
+    width: 100%;
+
+    td#email-address, td#first-name {
+        text-align: left;
+    }
+}
+
+section.account-list table th {
+    background: none;
+    border: 0;
+    text-align: left;
+}
+
+tr.message {
+    background: @white;
+}
+
+section.message {
+    width: 100%;
+    max-width: 100%;
+
+    background: @white;
+    border-radius: @base-border-radius;
+    border: 1px solid @grayMid;
+
+}
+
+section.account-list .icon-logo {
+    font-size: 1.3em;
+}
+
+section.motd {
+    @media only screen and (min-width: 1600px), (orientation: portrait) {
+        padding-left: 4%;
+    }
+}
+section.motd.recent,
+section.motd:hover {
+
+}
+
+section.motd p, section.motd h4 {
+    margin: 0.5em 0 0 0;
+}
+
+section.motd.recent,
+section.motd.recent h3 {
+    color: @blueDark;
+}
+
+section.motd.recent p.motd,
+section.motd.recent p.motd a.motd-signed {
+    color: @green;
+}
+
+section.motd .updated {
+    color: @red;
+}
+
+section.motd p.motd {
+    margin-left: 1em;
+}
+
+section.motd a.motd-signed {
+    display: block;
+    margin-top: 0.5em;
+    text-align: right;
+    padding-right: 2em;
+}
+
+section.motd .version-info {
+    padding-left: 0.5em;
+}

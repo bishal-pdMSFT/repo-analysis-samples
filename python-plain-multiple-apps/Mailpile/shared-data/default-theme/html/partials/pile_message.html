@@ -1,0 +1,324 @@
+<div id="message-{{mid}}" class="pile-message {% for tid in metadata.tag_tids %}{% if result.data.tags[tid].slug == "new" %}{{result.data.tags[tid].slug}}{% endif %}{% endfor %}" data-mid="{{mid}}">
+  {%- set activities = (activities or []) + get_ui_elements('email_activities', state) -%}
+  {%- if thread|length > 1 %}
+    {%- do activities.extend(get_ui_elements('thread_activities', state)) %}
+  {%- endif %}
+  {%- set from = metadata.from %}
+  {%- set allow_html = ((message.crypto.encryption.status == 'none') or not config.prefs.encrypted_block_html) %}
+  {%- set allow_images = ((message.crypto.encryption.status == 'none') or not config.prefs.encrypted_block_web) %}
+  {%- set encryption_status = [] %}
+  {%- set signature_status = [] %}
+  {%- set special_text_parts = [] %}
+  {%- macro msg_crypto(part, forcedisplay) %}
+    {#-
+     # Parts that do not have own crypto attribute inherit from message itself
+     # Watch for changes to the "status" which is present in each encryption and
+     # signature section - if either has changed, then we have moved from
+     # one security context to the next, and need to let the user know.
+     #}
+    {%- set part_encryption = (part.crypto and part.crypto.encryption or message.crypto.encryption) %}
+    {%- set part_signature = (part.crypto and part.crypto.signature or message.crypto.signature) %}
+    {%- set encryption = show_text_part_encryption(part_encryption and part_encryption.status) %}
+    {%- set signature = show_text_part_signature(part_signature and part_signature.status) %}
+
+    {%- if encryption_status and (forcedisplay or part_encryption.status != encryption_status[-1]) %}
+    <div class="part-crypto-status clearfix crypto-changed border-{{ encryption.color }}">
+      <span class="message-inline-crypto-info {{encryption.color}}">&#x2198;</span>
+    {%- elif signature_status and part_signature.status != signature_status[-1] %}
+    <div class="part-crypto-status clearfix crypto-changed border-{{ signature.color }}">
+      <span class="message-inline-crypto-info {{signature.color}}">&#x2198;</span>
+    {%- else %}
+    <div class="part-crypto-status clearfix border-{{ encryption.color }}">
+    {%- endif %}
+
+    {%- if part_encryption %}
+      {%- if not encryption_status or forcedisplay or part_encryption.status != encryption_status[-1] %}
+      <span class="message-inline-crypto-info inline-encryption-info"
+            title="{{ encryption.text }}"
+            data-crypto_color="{{ encryption.color }}"
+            data-crypto_icon="{{ encryption.icon }}"
+            data-crypto_message="{{ encryption.message }}"
+            data-crypto_keyinfo="{{ part_encryption.keyinfo }}">
+        <span class="icon {{ encryption.color }} {{ encryption.icon }}"></span>
+        <span class="text {{ encryption.color }}">{{ encryption.text }}</span>
+      </span>
+      {%- endif %}
+      {%- do encryption_status.append(part_encryption.status) %}
+    {%- endif %}
+
+    {%- if part_signature %}
+      {%- if not signature_status or part_signature.status != signature_status[-1] %}
+      <span class="message-inline-crypto-info inline-signature-info"
+            title="{{ signature.text }}"
+            data-crypto_color="{{ signature.color }}"
+            data-crypto_icon="{{ signature.icon }}"
+            data-crypto_message="{{ signature.message }}"
+            data-crypto_keyinfo="{{ part_signature.keyinfo }}">
+        <span class="icon {{ signature.color + ' ' + signature.icon }}"></span>
+        <span class="text {{ signature.color }}">{{ signature.text }}</span>
+      </span>
+      {%- endif %}
+      {%- do signature_status.append(part_signature.status) %}
+    {%- endif %}
+    </div>
+  {%- endmacro %}
+  {%- set mailer_daemon = ('mailer-daemon@' in from.address) or ('MAILER-DAEMON@' in from.address) or ('postmaster@' in from.address) %}
+  {%- set risky_content = config.prefs.antiphishing and (metadata.flags.spam or mailer_daemon or message.trust.problem or (message.trust.warning and message.attachments)) and True %}
+  {%- set risky_links = config.prefs.antiphishing and (risky_content or message.trust.trust_unknown) and True %}
+  {%- macro risky_content_classes() %}
+    {%- if risky_content %} risky hide{% endif -%}
+  {%- endmacro %}
+  {%- macro msg_warning(reason, nolinks, noatts, actions) %}
+    <div style="border: 1px solid #c70; background: #ffb; margin: 8px 0 2px -10px; padding: 7px;"
+         class="message-content-warning">
+      <span style="float: left; color: #b60; margin: 10px 10px 0 5px; font-size: 18px;"
+            class="icon icon-signature-unknown"></span>
+      {{ reason -}}
+      {%- if nolinks and noatts and message.attachments %} {{_("Blocked attachments, replies, and links.")}}
+      {%- elif noatts and message.attachments %} {{_("Attachments and replies are blocked.")}}
+      {%- elif nolinks %} {{_("Links are blocked.")}}{%- endif %}
+      <div class="message-content-warning-actions" style="margin: 6px 0 0 0;">
+        {%- for act in actions %}{% if not act.hide %}
+          <a style="margin: 0 0.5em;" href="javascript:{{ act.act }}"><span class="icon icon-{{ act.icon }}" style="opacity: 0.7"></span> {{ act.msg }}</a>
+        {% endif %}{%- endfor %}
+      </div>
+    </div>
+  {%- endmacro %}
+  <div class="pile-message-content">
+  {%- if config.prefs.antiphishing %}
+    {%- if metadata.flags.spam %}
+      {{- msg_warning("This message is probably spam.", True, True, [
+        {"icon": "not-spam", "msg": _("Remove from spam")},
+        {"icon": "attachment", "msg": _("Show risky content")},
+      ]) -}}
+    {%- elif message.trust.problem or (message.trust.warning and message.attachments) %}
+      {{- msg_warning((message.trust.problem or message.trust.warning) + ".", True, True, [
+        {"icon": "attachment", "act": "Mailpile.stuff();", "msg": _("Show risky content")},
+        {"icon": "spam", "msg": _("Send to spam")},
+      ]) -}}
+    {%- elif risky_content or risky_links %}
+      {{- msg_warning("This sender's reputation is unknown.", True, risky_content, [
+        {"icon": "groups", "msg": _("Add to contacts"), "hide": (mailer_daemon or metadata.flags.from_contact) and True or False },
+        {"icon": "attachment", "msg": _("Show risky content")},
+        {"icon": "spam", "msg": _("Send to spam")},
+      ]) -}}
+    {%- endif %}
+  {%- endif %}
+  {%- if message.vcal_parts %}
+    {% for event in message.vcal_parts %}
+    <div class="pile-message-vcal-event">
+        <h2><span class="icon icon-calendar"></span> {{event.summary}}</h2>
+        <div class="event-details">
+            <h3 class="header-name crypto-color-gray">Starts:</h3>
+            <span class="header-value" title="{{event.dtstart}}">
+                <span class="time">{{event.dtstart}}</span>
+            </span>
+            <h3 class="header-name crypto-color-gray">Ends:</h3>
+            <span class="header-value" title="{{event.dtend}}">
+                <span class="time">{{event.dtend}}</span>
+            </span>
+            <h3 class="header-name crypto-color-gray">
+              Organizer:
+            </h3>
+            <span class="header-value">
+              <span class="name"><span class="punct">"</span>{{event.organizer.cn}}<span class="punct">"</span></span>
+              <span class="email"><span class="punct">&lt;</span>{{event.organizer.email}}<span class="punct">&gt;</span></span>
+            </span>
+
+            <h3 class="header-name crypto-color-gray">
+              Attendees:
+            </h3>
+            <span class="header-value">
+                {% for att in event.attendees %}
+                <span class="name"><span class="punct">"</span>{{att.cn}}<span class="punct">"</span></span>
+                <span class="email"><span class="punct">&lt;</span>{{att.email}}<span class="punct">&gt;</span></span>
+                {% endfor %}
+            </span>
+
+        </div>
+
+        <div>{{event.description|to_br}}</div>
+    </div>
+    {% endfor %}
+  {%- endif %}
+
+  {%- if message.text_parts %}
+    {%- set last_part = message.text_parts|length - 1 %}
+    {%- for part in message.text_parts %}
+    <div class="pile-message-text-part">
+      {%- if part.aid and config.web.developer_mode %}
+      <a href="{{ U('/message/download/get/=', mid, '/', part.aid, '/') }}"
+         title="{{_('Download')}}: {{ part.aid }}, {{ part.mimetype}}"
+         style="position: absolute; right: 0; opacity: 0.25;">
+        <span class="icon icon-download"></span>
+      </a>
+      {%- endif %}
+      {%- if part.data|trim %}
+        {{- msg_crypto(part, False) }}
+        {%- autoescape false %}
+        {%- set part_text = part.data|nice_text|e|urlize|fix_urls(40, risky_links) %}
+        {%- if part.type in ("text", "pgpsignedtext") %}
+      <div class="message-part-text">{{ part_text|to_br }}</div>
+        {%- elif part.type in ("pgptext",) %}
+          {%- if part.crypto.encryption.status in ("lockedkey", "missingkey", "error") %}
+            {%- set failed_crypto = part.crypto.encryption %}
+            {%- include("partials/thread_message_cryptofail.html") %}
+          {%- else %}
+      <div class="message-part-text">{{ part_text|to_br }}</div>
+          {%- endif %}
+        {%- elif part.type in ("pgpbegin", "pgpend") %}
+      <div class="message-part-{{part.type}} hide">{{part.data}}</div>
+        {%- elif part.type == "quote" %}
+          {# If this is the 2nd-to-last part, and the LAST part is a quote
+             or signature, we shall also hide. #}
+          {%- if loop.index == (loop.length - 1) and
+                 message.text_parts[last_part].type in ("signature", "quote") -%}
+            {% do special_text_parts.append("quote") %}
+      <div class="message-part-quote hide">{{ part_text|to_br }}</div>
+          {# If this part is a quote at end of message, hide #}
+          {%- elif loop.last %}
+            {%- do special_text_parts.append("quote") %}
+      <div class="message-part-quote hide">{{ part_text|to_br }}</div>
+          {%- else %}
+      <div class="message-part-quote">{{ part_text|to_br }}</div>
+          {%- endif -%}
+        {%- elif part.type == "signature" %}
+          {%- do special_text_parts.append("signature") %}
+      <div class="message-part-signature hide">{{ part_text|to_br }}</div>
+        {%- else %}
+      <div class="message-part-text"><em>{{_("Unknown Text Part")}}</em></div>
+        {%- endif %}
+        {%- endautoescape %}
+      {%- endif %}
+    </div>
+    {%- endfor %}
+    {%- if allow_html %}{%- for part in message.html_parts %}
+    <div id="html-part-{{ mid }}-{{ loop.index }}"
+         class="pile-message-html-part hide">
+      {{ msg_crypto(part, loop.first) }}
+      {%- if part.aid and config.web.developer_mode %}
+      <a href="{{ U('/message/download/get/=', mid, '/', part.aid, '/') }}"
+         title="{{_('Download')}}: {{ part.aid }}, {{ part.mimetype}}"
+         style="position: absolute; right: 0; opacity: 0.25;">
+        <span class="icon icon-download"></span>
+      </a>
+      {%- endif %}
+      <div class="message-part-html">
+        <i class="noframe">{{ _("HTML rendering requires Javascript, sorry!") }}</i>
+      </div>
+    </div>
+    {%- endfor %}{%- endif %}
+  {%- else %}
+    {%- if message.crypto.encryption.status in ("lockedkey", "missingkey", "error") %}
+      {%- set failed_crypto = message.crypto.encryption %}
+      {%- include("partials/thread_message_cryptofail.html") %}
+    {%- elif not message.attachments %}
+      <div class="message-part-text"><em>{{_("Message content is empty")}}</em></div>
+    {%- endif %}
+  {%- endif %}
+  {%- if message.attachments %}
+    <div class="pile-message-attachments">
+      <ul class="pile-message-attachments horizontal clearfix{{ risky_content_classes() }}">
+    {%- for att in message.attachments %}
+        <li class="left">
+      {# FIXME: Too ugly, for now. { msg_crypto(att, False) } #}
+      {%- set type = attachment_type(att.mimetype) %}
+      {%- if (att.filename) %}
+        {%- set filename = att.filename %}
+      {%- else %}
+        {%- set filename = _("Untitled") %}
+      {%- endif %}
+      {%- set is_image = att.mimetype in ["image/bmp", "image/gif", "image/jpg", "image/jpeg", "image/pjpeg", "image/svg+xml", "image/x-png", "image/png", "application/vnd.google-apps.photo"] %}
+      {%- set is_pdf = (att.mimetype in ["application/pdf"]) %}
+      {%- set file_parts = filename.split(".") %}
+      {%- set file_parts_length = file_parts|length %}
+      {#- if type == "keys" #}
+        {#- do special_text_parts.append("pgp-key") #}
+        {#- FIXME: We should omit these (and other boring attachments), but
+                   instead add a mode that lets users easily download any part
+                   they like. Like mutt! #}
+      {#- else #}
+        <a href="{{ U('/message/download/get/=', mid, '/part-', att.count, '/') }}"
+        {%- if is_image %}
+           class="attachment-image" target=_blank
+        {%- else %}
+           class="attachment"{% if is_pdf %} target="_blank"{% endif %}
+        {%- endif %}
+        {%- if att.crypto.encryption.description %}
+           data-description="{{ att.crypto.encryption.description }}"
+        {%- endif %}
+           data-size="{{att.length|friendly_bytes}}"
+           title="{{filename}}" type="{{att.mimetype}}">
+        {%- if is_image %}
+          <div class="preview" style="background-image: url('{{ U('/message/download/preview/=', mid, '/part-', att.count, '/') }}');"></div>
+        {%- else %}
+          <div class="preview">
+            <span class="icon-mime" type="{{att.mimetype}}"></span>
+          {%- if filename != _("Untitled") %}
+            <span class="extension">
+              {{- file_parts[file_parts_length - 1] -}}
+            </span>
+          {%- endif %}
+          </div>
+          <div class="filename">
+          {%- if att.crypto.encryption.status == "decrypted" %}
+            <span class="icon-lock-closed crypto-encrypted"></span>&nbsp;
+          {%- elif att.crypto.encryption.status == "encrypted" %}
+            <span class="icon-lock-closed crypto-error"></span>&nbsp;
+          {%- endif %}
+          {%- if file_parts_length > 2 or filename|length > 20 %}
+              {{- att.filename[0:15] -}}...
+          {%- elif file_parts[0] %}
+              {{- file_parts[0] -}}
+          {%- endif %}
+          </div>
+        {%- endif %}
+        </a>
+      {#- endif #}
+        </li>
+    {%- endfor %}
+      </ul>
+    </div>
+  {%- endif %}
+  </div>
+  <div class="message-actions clearfix">
+    <ul class="message-actions horizontal left">
+      {%- if "quote" in special_text_parts or "signature" in special_text_parts %}
+      <li class="action show-quotes">
+        <a data-show="#message-{{mid}} .pile-message-content .hide"
+           data-hide="#message-{{mid}} .show-quotes"
+           class="do-show message-actions-quote"
+           href="#">&middot;&middot;&middot;&middot;</a>
+      </li>
+      {%- endif %}
+    </ul>
+  </div>
+  <div class="{{ risky_content_classes() }}">
+    <p class="message-actions-padding">&nbsp;</p>
+    <ul class="message-actions horizontal bottom left">
+      <li class="action"><a class="message-action-reply-all" href="#"><span class="icon-reply-all"></span> {{_("Reply")}}</a></li>
+      <li class="action"><a class="message-action-forward" href="#"><span class="icon-forward"></span> {{_("Forward")}}</a></li>
+      {%- for item in activities %}
+      <li class="action"><a class="message-action-{{ item.name }}"
+                            href="{{ item.url }}" title="{{ item.description }}">
+        <span class="icon-{{ item.icon }}"></span>
+        {% if loop.index < 3 %}{{_(item.text)}}{% endif %}
+      </a></li>
+      {%- endfor %}
+    </ul>
+  </div>
+</div>
+<script>
+<!-- allow_html={{ allow_html }}, allow_images={{ allow_images }} -->
+$(document).ready(function() {
+  Mailpile.Message.AnalyzeMessageInline('{{mid}}');
+  $('#message-{{mid}}').data('html', {{ message.html_parts|json|safe }});
+  {%- if allow_html and
+         message.html_parts|length > 0 and
+         from.get('html-policy', 'none') != 'none' %}
+    Mailpile.Message.ShowHTML(
+      '{{mid}}', '{{from["html-policy"]}}',
+      {% if allow_images %}true{% else %}false{% endif %});
+  {%- endif %}
+});
+</script>

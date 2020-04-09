@@ -1,0 +1,44 @@
+#!/usr/bin/make -f
+
+# pybuild config
+#export PYBUILD_NAME=mailpile
+export PYBUILD_DESTDIR_python2=debian/tmp
+export PYBUILD_TEST_NOSE=1
+export PYBUILD_DISABLE=test
+#export PYBUILD_TEST_ARGS={dir} --verbose
+
+# pbr version
+PKD  = $(abspath $(dir $(MAKEFILE_LIST)))
+export PBR_VERSION = $(shell dpkg-parsechangelog -l$(PKD)/changelog --show-field Version | sed 's/-[^-]*$$//' | sed 's/[+~].*$$//')
+
+%:
+	dh $@ --with python2 --buildsystem=pybuild
+
+override_dh_auto_build:
+	# Remove unused files
+	rm -f shared-data/default-theme/index.html
+	rm -f shared-data/default-theme/webfonts/LICENSE
+	rm -rf mailpile/tests
+	rm -rf shared-data/default-theme/less
+
+	# Remove plugins that aren't fit for use
+	rm -f shared-data/contrib/{experiments,forcegrapher,maildeck,i18nhelper}
+
+	########################
+	# Generate apache conf #
+	########################
+	python shared-data/multipile/mailpile-admin.py --generate-apache-config \
+		--mailpile-share /usr/share/mailpile \
+		--mailpile-theme /usr/share/mailpile/default-theme \
+		--multipile-www /usr/share/mailpile/multipile/www \
+		> mailpile-apache.conf
+	python shared-data/multipile/mailpile-admin.py --generate-apache-sudoers \
+		--mailpile-share /usr/share/mailpile \
+		> mailpile-apache
+
+	dh_auto_build
+
+override_dh_install:
+	# FIXME: This is a build step, but the .mo files are ignored. :(
+	scripts/compile-messages.sh
+	dh_install

@@ -1,0 +1,160 @@
+{% extends "layouts/auth.html" %}
+{% block title %}{{_("Mailpile Password")}} | {{_('Setup')}}{% endblock %}
+{% block content %}
+
+<div id="setup-passphrase" class="setup-box setup-box-medium add-top half-bottom animated fadeIn">
+  <div id="identity-vault-lock" class="vault-lock-outer">
+    <div class="vault-lock-inner">
+      <div class="vault-lock icon-lock-closed animated"></div>
+    </div>
+  </div>
+
+  {# Password chosen, hooray! #}
+  <div id="setup-passphrase-chosen"
+       class="{% if not result.configured %}hide{% endif %} text-center half-top">
+    <h3 class="text-center">{{_("Mailpile Secured!")}}</h3>
+    <p class="text-center">
+      {{_("Access to your Mailpile will now require this password.")}}
+    </p>
+    <p class="text-center">
+      {{_("All settings and downloaded mail will be encrypted, so even if someone steals your laptop they will not have access to your e-mail.")}}
+    </p>
+    <p><a href="{{ U("/profiles/") }}"
+          class="button-primary">{{_("Start using Mailpile")}}</a></p>
+  </div>
+
+  {# Input form for choosing a password #}
+  <div id="setup-passphrase-chooser"
+       class="{% if result.configured %}hide{% endif %} text-center half-top">
+    <form method="POST" action="{{ U("/setup/password/") }}"
+          id="form-setup-passphrase" class="standard text-center half-top">
+
+    {% if result.need_password %}
+      {{ csrf_field|safe }}
+      <h3 class="text-center">{{_("Change your Mailpile Password")}}</h3>
+      <span id="validation-passphrase">
+        <label class="validation-message" {% if result.incorrect %}style="color: #f00;"{% endif %}>{{_("Authenticate")}}</label>
+        <span class="validation-message"></span>
+        <input id="input-setup-validate-passphrase" class="medium center"
+               autofocus autocorrect="off" autocapitalize="off" class="center"
+      {% if result.incorrect %}
+               placeholder="{{_("Password incorrect! Try again...")}}"
+      {% else %}
+               placeholder="{{_("Your current Mailpile Password")}}"
+      {% endif %}
+               type="password" name="existing">
+      </span>
+      <a id="generate" class="clickable" title="{{ _("Click to generate new secure password") }}">
+        <label class="validation-message">
+          {{_("Your new Mailpile Password")}}
+          &nbsp;&nbsp; <span class="icon icon-robot"></span>
+        </label>
+      </a>
+    {% else %}
+      <h3 class="text-center" style="margin-bottom: 10px;">
+        {{_("Choose your Mailpile Password")}}
+      </h3>
+      <p class="text-center about">
+        {{_("Your Mailpile Password should be something really hard to guess but memorable.")}}<br>
+        {{_("This password will be used to unlock your Mailpile settings, keys and accounts.")}}
+      </p>
+    {% endif %}
+
+      <p class="hide blank"><i>
+        {{_("We have made a secure recommendation, but you still need to type it yourself!")}}
+      </i></p>
+      <p class="hide mismatch"><i>
+        {{_("The passwords don't match!")}}
+      </i></p>
+      <p class="hide short"><i>
+        {{_("That password is too short. This is important!")}}
+      </i></p>
+      <p class="hide shortish"><i>
+        {{_("That password is a bit short!")}}<br>
+        {{_("We recommend using a phrase of at least four memorable words.")}}
+      </i></p>
+
+      {% set suggestion = mailpile('setup/mkpass').result.passphrase %}
+      <span id="validation-passphrase">
+        <span class="validation-message"></span>
+        <input id="input-setup-passphrase" class="medium center"
+               type="password" name="password1"
+               autofocus autocorrect="off" autocapitalize="off" class="center"
+               placeholder="{{ suggestion }}">
+      </span>
+      <span id="validation-passphrase_confirm">
+        <label class="validation-message">{{_("Confirm your Mailpile Password")}}</label>
+        <input id="input-setup-passphrase_confirm" class="medium center"
+               type="password" name="password2"
+               autocorrect="off" autocapitalize="off" class="center"
+               placeholder="{{ suggestion }}">
+      </span>
+
+      <button id="btn-setup-passphrase" class="button-primary"
+              type="submit">{{_("Set Mailpile Password")}}</button>
+
+    {% if result.need_password %}
+      <a style="position: absolute; opacity: 0.6; margin-top: 5px" href="/">
+        &nbsp; &nbsp; &nbsp;
+        <span class="icon icon-home"></span> {{_("Cancel")}}
+      </a>
+    {% else %}
+      <a id="generate"
+         class="clickable"
+         style="position: absolute; opacity: 0.6; margin-top: 5px"
+         title="{{ _("Click to generate new secure password") }}">
+        &nbsp; &nbsp; &nbsp;
+        <span class="icon icon-robot"></span> {{_("Suggest")}}
+      </a>
+    {% endif %}
+
+    </form>
+  </div>
+</div>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('a#generate').click(function() {
+      Mailpile.API.setup_mkpass_post({}, function(response){
+        $('input#input-setup-passphrase, input#input-setup-passphrase_confirm'
+          ).attr('placeholder', response.result.passphrase);
+      });
+    });
+
+    var $pw1 = $('input#input-setup-passphrase');
+    var $pw2 = $('input#input-setup-passphrase_confirm');
+
+    $pw2.focus(function(ev) {
+      if ($pw1.val().length <= 16) {
+        $('.about, .blank, .mismatch, .short').slideUp();
+        $('.shortish').slideDown();
+      }
+      else {
+        $('.shortish, .blank, .mismatch, .short').slideUp();
+        $('.about').slideDown();
+      }
+    });
+
+    $('form').submit(function(ev) {
+      if (!$pw1.val())
+      {
+        $('.about, .mismatch, .short').slideUp();
+        $('.blank').slideDown();
+        ev.preventDefault();
+      }
+      else if ($pw1.val() != $pw2.val())
+      {
+        $('.about, .blank, .short').slideUp();
+        $('.mismatch').slideDown();
+        ev.preventDefault();
+      }
+      else if ($pw1.val().length <= 6)
+      {
+        $('.about, .blank, .mismatch').slideUp();
+        $('.short').slideDown();
+        ev.preventDefault();
+      }
+    });
+  });
+</script>
+{% endblock %}

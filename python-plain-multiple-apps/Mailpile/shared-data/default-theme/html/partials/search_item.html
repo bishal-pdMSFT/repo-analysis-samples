@@ -1,0 +1,349 @@
+{%    set message = result.data.messages.get(mid)
+%}{%  set message_errors = (result.errors or {}).get(mid)
+%}{%  set metadata = result.data.metadata[mid]
+%}{%  set thread = result.data.threads[metadata.thread_mid]
+%}{%  set conversation_count = 0 if (state.context_url == '/message/' or ('flat' in result.search_order)) else thread|length
+%}{%  set cleartext = show_text_part_encryption('none')
+%}{%  set unsigned = show_text_part_signature('none')
+%}{%  set to_cc = metadata.to_aids + metadata.cc_aids
+%}{%  set from = result.data.addresses[metadata.from.aid]
+%}{%  if not from
+%}{%    set from = {'fn': 'Unknown sender', 'email': ''}
+%}{%  endif
+%}{%  set allow_html = (message and message.crypto and ((message.crypto.encryption.status == 'none') or not config.prefs.encrypted_block_html))
+%}{%  macro msg_url(msg_mid, context_mid)
+%}{%    set m_metadata = result.data.metadata.get(msg_mid)
+%}{%    if m_metadata and state.context_url == '/message/':
+%}{{      m_metadata.urls.thread + '#pile-message-' + msg_mid
+}}{%    elif m_metadata and m_metadata.urls.editing:
+%}{{      m_metadata.urls.editing + '#pile-message-' + msg_mid
+}}{%    elif True:
+%}{%      set v = (context_mid + '/' + msg_mid) if (context_mid) else msg_mid
+%}{{      U(add_state_query_string(state.command_url, state, {
+             'url_args_remove': [['view','']],
+             'url_args_add': [['view', v]]})
+           ) + '#pile-message-' + msg_mid
+}}{%    else:
+%}{{      m_metadata.urls.thread
+}}{%    endif
+%}{%  endmacro %}
+{%- if not display_attachments or metadata.body.parts %}
+<tr class="pile-message pile-message-{{mid}}{% if mid != this_mid %} pile-message-{{this_mid}}{% endif %} result has-mid
+           {%- for tid in metadata.tag_tids %} in_{{result.data.tags[tid].slug}}{% endfor %}
+           {%- if message %} full-message has-url{% endif %}
+           {%- if display_attachments %} display-attachments{% endif %}
+           {%- if metadata.flags.replied %} replied{% endif %}"
+    data-tids="{{ metadata.tag_tids|join(',')  }}"
+{%- if message %}
+    data-url="{{ msg_url(this_mid, 0) }}"
+  {%- if message.headerprints %}
+    {% if message.headerprints.mua %}data-mua="{{ message.headerprints.mua }}"{% endif %}
+    data-mua-fingerprint="{{ message.headerprints.tools }}"
+    data-sender-fingerprint="{{ message.headerprints.sender }}"
+  {%- endif %}
+{%- endif %}
+    data-state="normal"
+    data-list="{{ metadata.body.list }}"
+    data-to-cc="{% for cid in to_cc %}{{ result.data.addresses[cid].address }} {% endfor %}"
+    data-mid="{{mid}}">
+  <td class="draggable"></td>
+{% if message or message_errors %}
+  <td class="message-nav">
+  {%- if previous_mid %}
+    <a href="{{msg_url(previous_mid, 0)}}" title="{{_('Previous Conversation')}}"
+       id="previous-message" data-noblank=1 data-keep-selection=1
+       class="icon">&#x25B2;</a><br>
+  {%- endif %}
+    <a href="{{ U(add_state_query_string(state.command_url, state, {
+                    'url_args_remove': [['view','']]}))}}"
+       data-noblank=1 data-keep-selection=1 title="{{_('Close')}}"
+       id="close-message"><span class='icon icon-circle-x'></span></a><br>
+  {%- if next_mid %}
+    <a href="{{msg_url(next_mid, 0)}}" title="{{_('Next Conversation')}}"
+       id="next-message" data-noblank=1 data-keep-selection=1
+       class="icon">&#x25BC;</a><br>
+  {%- endif %}
+  </td>
+  <td class="from people" data-fn="{{metadata.from.fn}}" data-address="{{metadata.from.address}}">
+  {%- if message.editing_strings %}
+    <!-- FIXME -->
+  {%- else %}
+    <div class="message-details">
+      <div class="header-cooked header-date">
+        <h3 class="header-name {{ unsigned.color }}"
+            title="{% for header, value in message.header_list|sort|reverse -%}
+{%- set hlc = header|lower -%}
+{% if hlc == 'user-agent' -%}{{_('Composed With')}}: {{value}}
+{% elif hlc == 'autocrypt' -%}{{_('Message has an Autocrypt header')}}{% if 'prefer-encrypt=mutual' in value %}, {{_('prefers encryption')}}{% endif %}.
+{% elif hlc == 'received' -%}{{_('Received')}}: {{value|friendly_received}}
+{% elif hlc == 'date' -%}{{_('Message Date')}}: {{value}}
+{% endif -%}{%- endfor %}">
+          {{metadata.timestamp|friendly_time}}, {{metadata.timestamp|friendly_datetime}}
+        </h3>
+      </div>
+      <div class="header-cooked header-from">
+        <h3 class="header-name {{ unsigned.color }}">
+          {{_("From")}}:
+{#
+ #  FIXME: We are using the From data given to us in the metadata section,
+ #         which may differ from the message contents, especially in a
+ #         memory-hole substitution world. This needs reworking.
+ #}
+          <span class="icon message-metadata-crypto-info {{ unsigned.icon }}"
+                title="{{ unsigned.text }}"
+                data-crypto_icon="{{ unsigned.icon }}"
+                data-crypto_color="{{ unsigned.color }}"
+                data-crypto_message="{{ unsigned.message }}"></span>
+          <ul class="message-sender-actions">
+{%- if 0 and is_dev_version() %}
+          {%- if not metadata.from.flags.contact and not metadata.from.flags.profile %}
+            <li class="action"><a title="{{_("Add Contact")}}" class="message-action-add-contact" href="#" data-name="{{metadata.from.fn}}" data-address="{{metadata.from.address}}"><span class="icon icon-plus"></span></a></li>
+          {%- endif %}
+{%- endif %}
+            <li class="action"><a title="{{_("Private Reply")}}" class="message-action-reply" data-mid="{{mid}}" href="#"><span class="icon icon-reply"></span></a></li>
+          </ul>
+          <div class="crypto-and-tags">
+            {%- include "partials/pile_email_tags.html" %}
+          </div>
+        </h3>
+        <span class="header-value" title='{{metadata.from.fn}} &lt;{{metadata.from.address}}&gt;'>
+          <span class="address-avatar"><img src="{{ show_avatar(metadata.from) }}"></span>
+          <span class="address-name"><span class="punct">"</span>{{metadata.from.fn}}<span class="punct">"</span></span>
+          <span class="address-email"><span class="punct">&lt;</span>{{metadata.from.address}}<span class="punct">&gt;</span></span>
+        </span>
+      </div>
+    {%- for txt, which, rcpts in (('To', 'to', get_addresses(message.header_list, "to")),
+                                  ('CC', 'cc', get_addresses(message.header_list, "cc")),
+                                  ('BCC', 'bcc', get_addresses(message.header_list, "bcc"))) %}
+      {%- if rcpts %}
+      <div class="header-cooked header-{{which}}">
+        <h3 class="header-name {{ unsigned.color }}">
+          {{_(txt)}}:
+          <span class="icon message-metadata-crypto-info {{ unsigned.icon }}"
+                title="{{ unsigned.text }}"
+                data-crypto_icon="{{ unsigned.icon }}"
+                data-crypto_color="{{ unsigned.color }}"
+                data-crypto_message="{{ unsigned.message }}"></span>
+        </h3>
+        {%- for ai in rcpts %}
+        <span class="header-value" title='{{ai.fn}} &lt;{{ai.address}}&gt;'>
+          <span class="address-avatar"><img src="{{ show_avatar(ai) }}"></span>
+          <span class="address-name"><span class="punct">"</span>{{ai.fn or ai.address}}<span class="punct">"</span></span>
+          <span class="address-email"><span class="punct">&lt;</span>{{ai.address}}<span class="punct">&gt;</span></span><span class="punct">,</span>
+        </span>
+        {%- endfor %}
+      </div>
+      {%- endif %}
+    {%- endfor %}
+    {%- if thread|length < 2 %}
+      {%- include "partials/pile_email_hints.html" %}
+    {%- endif %}
+    </div>
+  {%- endif %}
+  {%- if thread|length > 1 %}
+    {%- include "partials/pile_threading.html" %}
+  {%- endif %}
+{% else %}
+  <td class="avatar">
+    <a><img src="{{ show_avatar(from) }}"></a>
+  </td>
+ {%- if to_cc and display_recipients %}
+  {%- set to1 = result.data.addresses[to_cc[0]] %}
+  <td class="to people" data-fn="{{metadata.from.fn}}" data-address="{{metadata.from.address}}">
+    <a href="{{ msg_url(mid, 0) }}" data-noblank=1 data-keep-selection=1
+       title="{% if display_attachments -%}
+{{ _("Subject") }}: {{ metadata.subject }}
+{% endif %}{{_("From") }}: {{metadata.from.fn}} &lt;{{metadata.from.address}}&gt;
+{{ _("To") }}: {% if to_cc %}
+ &lt;{{ to1.address }}&gt;{% if to_cc|length > 1 %} +{{ to_cc|length -1 }}{% endif %}
+{%- else %}({{_("unknown")}}){% endif %}">
+      {%- if conversation_count > 1 %}
+      {%-   if to_cc|length > 1 %}<span class="icon icon-reply-all"></span>
+      {%-   else %}<span class="icon icon-reply"></span>{% endif %}
+      {%- else %}<span class="icon icon-forward"></span>
+      {%- endif %} &nbsp;
+      {%- if to1.fn %}{{ to1.fn|nice_name(28) }}{% else %}(&lt;{{ to1.address }}&gt;){% endif %}
+      {% if to_cc|length > 1 %}<span class="rcpt-count">+{{ to_cc|length -1 }}</span>{% endif %}
+    </a>
+ {%- else %}
+  <td class="from people" data-fn="{{metadata.from.fn}}" data-address="{{metadata.from.address}}">
+    <a href="{{msg_url(mid, 0)}}" data-noblank=1 data-keep-selection=1
+       title="{% if display_attachments -%}
+{{ _("Subject") }}: {{ metadata.subject }}
+{% endif %}{{_("From") }}: {{metadata.from.fn}} &lt;{{metadata.from.address}}&gt;
+{{ _("To") }}: {% if to_cc %}
+ {%- set to1 = result.data.addresses[to_cc[0]] %}
+ &lt;{{ to1.address }}&gt;{% if to_cc|length > 1 %} +{{ to_cc|length -1 }}{% endif %}
+{%- else %}({{_("unknown")}}){% endif %}">
+      {%- if metadata.from.fn %}{{ metadata.from.fn|nice_name(28) }}{% else %}({{_("No Name")}}){% endif %}
+      {%- if conversation_count > 1 %}<span class="conversation-count">{{conversation_count}}</span>{% endif %}
+      {%- if metadata.flags.replied %}<span class="icon-reply"></span>{% else %}
+      {%-   if metadata.flags.forwarded %}<span class="icon-forward"></span>{% endif %}
+      {%- endif %}
+    </a>
+ {%- endif %}
+{% endif %}
+  {%- if not message and not message_errors %}
+    <div class="crypto-and-tags">
+      {%- include "partials/pile_email_tags.html" %}
+    {% if metadata.crypto.encryption in ('decrypted', 'mixed-decrypted', 'lockedkey', 'mixed-lockedkey') %}
+    <span class="icon crypto icon-lock-closed color-08-green"></span>
+    {% elif metadata.crypto.encryption in ('error', 'mixed-error', 'missingkey', 'mixed-missingkey') %}
+    <span class="icon crypto icon-lock-closed color-12-red"></span>
+    {% endif %}
+  {%- endif %}
+    </div>
+  </td>
+  <td class="subject{% if message %} full-message{% endif %}">
+{%- if message_errors %}
+    {% include("partials/error_message_missing.html") %}
+{%- elif not message %}
+  {%- set displayed_atts = [] %}
+  {%- if display_attachments %}
+    {%- for bp in (metadata.body.parts or []) %}
+      {%- set bp = body_part_metadata(bp) %}
+      {%- if bp.mimetype not in ('text/plain', 'text/html') or bp.filename not in ('T', 'H', '', None) %}
+        {%- set fp = bp.filename.split('.') %}
+      <a class="item-attachment" style="line-height: 18px;" {# FIXME! #}
+           title="{{_('Download')}} {{ bp.bytes }} - {{ bp.filename }}"
+           href="{{ U('/message/download/get/=', mid, '/part-', loop.index, '/') }}"
+           data-noblank=1 data-keep-selection=1 target=_blank>
+        <span style="position: absolute; display: inline-block;">
+          <span class="icon-mime" style="margin: 0 3px 0 7px;"
+                type="{{ bp.mimetype }}"></span> {# FIXME! #}
+          <b style="font-family: monospace; margin: 0;">
+        {%- if fp|length > 1 %}
+          {{ fp[-1]|upper }}
+        {%- else %}
+          BIN
+        {%- endif %}</b>
+        </span>
+        <span style="color: #666; margin: 0 0 0 5em;">
+        {%- if fp|length > 1 %}
+          {{ fp[:-1]|join('.') }}
+        {%- else %}
+          {{ bp.filename }}
+        {%- endif %}
+        </span>
+        {%- do displayed_atts.append(bp.filename) %}
+      </a>
+        {%- if not loop.last %}<br clear='both'>{% endif %}
+      {% endif %}
+    {%- endfor %}
+    {%- for url_url, url_text in (metadata.body.att_urls or []) %}
+      {%- if displayed_atts %}<br clear='both'>{% endif %}
+      <a class="item-attachment" style="line-height: 18px;" {# FIXME! #}
+           title="{{_('Download from the web')}}" target=_blank
+           href="{{ url_url }}" data-noblank=1 data-keep-selection=1>
+        <span style="position: absolute; display: inline-block;">
+          <b style="font-family: monospace; margin: 0;">WWW</b>
+        </span>
+        <span style="color: #666; margin: 0 0 0 5em;">
+          {{- url_text -}}
+        </span>
+        {%- do displayed_atts.append(url_url) %}
+      </a>
+    {%- endfor %}
+    {%- if not displayed_atts %}
+    <a data-noblank=1 data-keep-selection=1
+       href="{{msg_url(mid, 0)}}">
+      <i style="color: #bbb; margin: 0 0 0 5em;">
+        {{_('Oops, no attachments found!')}}
+        {{_('A bug?')}}
+        {{_('Click to view the message.')}}
+      </i>
+    </a>
+    {%- endif %}
+  {%- else %}
+    <a class="item-subject" title="{{metadata.body.snippet}}"
+       data-noblank=1 data-keep-selection=1
+       href="{{msg_url(mid, 0)}}">{{ nice_subject(metadata.subject) }}
+    </a>
+  {%- endif %}
+{%- else %}
+    <div class="message-container">
+    {%- if message.editing_strings %}
+      {% set editing_strings = message.editing_strings %}
+      {% set editing_addresses = result.data.addresses %}
+      {% set attachments = message.attachments %}
+      {% include("partials/compose.html") %}
+    {%- else %}
+      <div class="message-subject-container">
+        <h3 class="{{ (cleartext.color == 'crypto-color-gray') and unsigned.color or cleartext.color }}">
+          {{_("Subject")}}:
+          <span class="icon message-metadata-crypto-info {{ cleartext.color }} {{ cleartext.icon }}"
+                title="{{ cleartext.text }}"
+                data-crypto_icon="{{ cleartext.icon }}"
+                data-crypto_color="{{ cleartext.color }}"
+                data-crypto_message="{{ cleartext.message }}"></span>
+          <span class="icon message-metadata-crypto-info {{ unsigned.color }} {{ unsigned.icon }}"
+                title="{{ unsigned.text }}"
+                data-crypto_icon="{{ unsigned.icon }}"
+                data-crypto_color="{{ unsigned.color }}"
+                data-crypto_message="{{ unsigned.message }}"></span>
+        </h3>
+        {%- if allow_html and message.html_parts|length > 0 %}
+        <ul class="display-modes">
+          <li><a title="{{ _('Display HTML formatted message content') }}"
+                 class="message-show-html">
+            <span class="icon icon-news"></span></a></li>
+          {%- if message.text_parts|length > 0 %}
+          <li><a title="{{ _('Display plain-text message content') }}"
+                 class="message-show-text">
+            <span class="icon icon-document"></span></a></li>
+          {%- endif %}
+        </ul>
+        {%- endif %}
+        <ul class="alternate-views">
+          {%- for elem in get_ui_elements('display_modes', state, context='/message/') %}
+          <li><a title="{{ elem.description }}"
+                 data-noblank=1 data-keep-selection=1
+                 href="{{ elem.url|add_state_query_string({'query_args': {'mid': [mid]}}, elem)|url_path_fix }}">
+            {%- if elem.icon and '.' in elem.icon -%}
+            <img class="navigation-icon" src="{{ U(elem.icon) }}">
+            {%- elif elem.icon -%}
+            <span class="navigation-icon icon-{{elem.icon}}"></span>
+            {%- endif %}
+          </li>
+          {%- endfor %}
+          <li><a title="{{ _('Switch to full conversation view') }}"
+                 data-noblank=1 data-keep-selection=1 href="{{ U('/thread/=', mid, '/') }}">
+            <span class="icon icon-forum"></span></a></li>
+          <li><a title="{{ _('Display message source code') }}"
+                 target=_blank href="{{ U('/message/raw/=', mid, '/as.text') }}">
+            <span class="icon icon-work"></span></a></li>
+          <li><a title="{{ _('Display technical message data as JSON') }}"
+                 target=_blank href="{{ U('/message/=', mid, '/as.json') }}">
+            <span class="icon icon-code"></span></a></li>
+        </ul>
+        <div class="message-subject">
+          {%- set subjects = get_all(message.header_list, "subject") %}
+          {%- if subjects %}
+            {%- for value in subjects %}
+              {{ nice_subject(value) }}
+            {%- endfor %}
+          {%- else %}
+            {{ nice_subject(None) }}
+          {%- endif %}
+        </div>
+      </div>
+{%- include('partials/pile_message.html') -%}
+    </div>
+    {%- endif %}
+{%- endif %}
+  </td>
+  <td class="date{% if not config.web.friendly_dates %} wide-date{% endif %}"
+      data-ts="{{ metadata.timestamp }}">
+    <span title="{{metadata.timestamp|friendly_time}}, {{metadata.timestamp|friendly_datetime}}">
+      {% if config.web.friendly_dates -%}
+        {{metadata.timestamp|elapsed_datetime}}
+      {%- else -%}
+        {{metadata.timestamp|friendly_time}}, {{metadata.timestamp|friendly_datetime}}
+      {%- endif %}
+    </span>
+  </td>
+  <td class="checkbox">
+    <input type="checkbox" name="mid" value="{{mid}}">
+  </td>
+</tr>
+{% endif %}

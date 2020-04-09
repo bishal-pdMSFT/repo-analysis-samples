@@ -1,0 +1,5 @@
+{%- if result and result.tag_capabilities.template %}
+  {%- include("search/" + result.tag_capabilities.template + ".html") %}
+{%- else %}
+  {%- include("search/default.html") %}
+{%- endif %}
